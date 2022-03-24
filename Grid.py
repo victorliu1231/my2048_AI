@@ -9,6 +9,12 @@ def score(grid):
 def is_equal_arrays(array1, array2):
     return (array1 == array2).all()
 
+def is_all_arrays_equal(list_of_arrs):
+    if len(list_of_arrs) == 1:
+        return True
+    return True if len(np.unique(list_of_arrs, axis=0)) == 1 else False
+
+
 def remove_inner_zeros(array_1d):
     no_inner_zeroes_array_1d = array_1d[array_1d != 0]
     pad_length = len(array_1d) - len(no_inner_zeroes_array_1d)
@@ -91,6 +97,14 @@ def free_cells(grid):
 def num_free_cells(grid):
     '''Returns the total number of free cells.'''
     return len(free_cells(grid))    
+
+def num_inst_in_grid(grid, inst):
+    '''Returns the total number of instances 'inst' in a 2D array.'''
+    return np.isclose(grid, inst).sum()
+
+def kth_max(grid, k):
+    '''Returns the kth largest value in a 2D array.'''
+    return np.unique(grid)[-1*k]
 
 class Grid:
     def __init__(self, grid):

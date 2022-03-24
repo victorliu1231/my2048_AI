@@ -2,7 +2,7 @@ from operator import index
 from tkinter import Grid
 import numpy as np
 import random
-from Grid import num_adj_tiles, num_free_cells, is_equal_arrays
+from Grid import num_adj_tiles, num_free_cells, is_equal_arrays, is_all_arrays_equal, num_inst_in_grid, kth_max
 
 class AI:
     def __init__(self):
@@ -23,15 +23,40 @@ class AI:
             3: predicted_grid_down
         }
 
-        # Next, the AI will select which predicted grid has the largest number out of all the grids
-        predicted_maxs = np.array([])
+        predicted_num_free_cells = np.array([])
         for key in predicted_grids.keys():
+            #print(predicted_grids[key])
             if not is_equal_arrays(Grid_object.grid, predicted_grids[key]):
-                predicted_maxs = np.append(predicted_maxs, np.max(predicted_grids[key]))
+                predicted_num_free_cells = np.append(predicted_num_free_cells, num_free_cells(predicted_grids[key]))
             else:
-                predicted_maxs = np.append(predicted_maxs, 0) # If the shift_cell move is invalid, the AI will cull out this move from its selection pool by setting this move's max value to 0
-        #print(f"maxs: {predicted_maxs}")
-        index_direction = np.where(predicted_maxs == np.max(predicted_maxs))[0]
+                predicted_num_free_cells = np.append(predicted_num_free_cells, 0)
+        #print(f"num_free_cells: {predicted_num_free_cells}")
+        index_direction = np.where(predicted_num_free_cells == np.max(predicted_num_free_cells))[0]
+
+        # Next, the AI will select which predicted grid has the most largest-valued tiles out of all the grids.
+        #  If more than one grid has the most largest-valued tiles, then the AI will select which grid has the 
+        #  most 2nd largest tiles, then 3rd largest tiles, and so on. If all of the grids are exactly the same,
+        #  then break the while loop.
+        k = 1
+        while len(index_direction) > 1:
+            pool_of_selectable_arrays = []
+            predicted_num_kth_maxs = np.array([])
+            original_index_direction = np.copy(index_direction)
+            for index in index_direction:
+                pool_of_selectable_arrays.append(predicted_grids[index])
+            kth_largest = np.unique(pool_of_selectable_arrays)[-1*k]
+            if kth_largest == 0:
+                break
+            for index in index_direction:
+                predicted_num_kth_maxs = np.append(predicted_num_kth_maxs, num_inst_in_grid(predicted_grids[index], kth_largest))
+            #print(f"maxs: {predicted_maxs}")
+            if not is_all_arrays_equal(pool_of_selectable_arrays):
+                index_direction = np.where(predicted_num_kth_maxs == np.max(predicted_num_kth_maxs))[0]
+                index_direction = original_index_direction[index_direction]
+                k = k + 1
+            else:
+                break
+
 
         # If there is more than one predicted grid with the largest maximum number, then the AI will 
         #   select (out of that list) the grid with the most number of adjacent tiles with the same number.
@@ -47,16 +72,7 @@ class AI:
         
         # If there is more than one predicted grid with the largest maximum number AND
         #   there is more than one predicted grid with the most number of adjacent tiles with the same number, 
-        #   then the AI will select (out of that list) the grid with the most number of free cells.
-        if len(index_direction) > 1:
-            predicted_num_free_cells = np.array([])
-            original_index_direction = np.copy(index_direction)
-            for index in index_direction:
-                predicted_num_free_cells = np.append(predicted_num_free_cells, num_free_cells(predicted_grids[index]))
-                #print(predicted_grids[index])
-            #print(f"num_free_cells: {predicted_num_free_cells}")
-            index_direction = np.where(predicted_num_free_cells == np.max(predicted_num_free_cells))[0]
-            index_direction = original_index_direction[index_direction]
+        #   then the AI will select (out of that list) the grid with the most number of free cells.            
 
         # If there is still more than one optimal predicted grid, the AI will just choose randomly which
         #   direction to select amongst the optimal predicted grids.
