@@ -6,8 +6,6 @@ import sys
 import random
 from AI import AI
 
-
-
 # initialising pygame
 pygame.init()
  
@@ -107,8 +105,8 @@ is_AI_on = True
 AI_self_run = False
 if is_AI_on:
         AI = AI()
-        AI_self_run = True # Modify this variable to determine if the AI should run by itself or merely predict the best move
-        #print(AI.predict_best_direction(GameGrid))
+        AI_self_run = False # Modify this variable to determine if the AI should run by itself or merely predict the best move
+        AI_upon_click = True # Modify this variable to determine if the AI should progress to the next board position only upon clicking the screen
 
 # creating a running loop
 while True:
@@ -131,6 +129,13 @@ while True:
                         AI.execute_move(best_direction, GameGrid)
                         GameGrid.spawn_new()
                         update_screen(GameGrid.grid)
+                elif AI_upon_click:
+                        if event.type == pygame.MOUSEBUTTONUP:
+                                best_direction = AI.predict_best_direction(GameGrid)
+                                print(best_direction)
+                                AI.execute_move(best_direction, GameGrid)
+                                GameGrid.spawn_new()
+                                update_screen(GameGrid.grid)
                 else:
                         # checking if keydown event happened or not
                         if event.type == pygame.KEYDOWN:

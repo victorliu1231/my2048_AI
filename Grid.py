@@ -4,37 +4,42 @@ import numpy as np
 import random
 
 def score(grid):
+    '''Returns the total score in a grid.'''
     return np.sum(grid)
 
 def is_equal_arrays(array1, array2):
+    '''Determines whether array1 and array2 are equal element-wise. 
+        Can take either a 2D array or a list of 2D arrays for array1.'''
     return (array1 == array2).all()
 
 def is_all_arrays_equal(list_of_arrs):
+    '''Determines whether all arrays in the list of arrays are equal element-wise.'''
     if len(list_of_arrs) == 1:
         return True
     return True if len(np.unique(list_of_arrs, axis=0)) == 1 else False
 
-
 def remove_inner_zeros(array_1d):
+    '''Removes any inner zeros in a 1D array.'''
     no_inner_zeroes_array_1d = array_1d[array_1d != 0]
     pad_length = len(array_1d) - len(no_inner_zeroes_array_1d)
     no_inner_zeroes_array_1d = np.pad(no_inner_zeroes_array_1d, (0, pad_length), "constant")
     return no_inner_zeroes_array_1d
 
 def shift_cells_left_helper(grid):
-        new_grid = np.copy(grid)
-        grid_shape = new_grid.shape
-        for i in range(grid_shape[0]): #indexes by rows
-            for j in range(grid_shape[1]): #indexes by entries in each row
-                if j != grid_shape[1]-1: #ensures that j+1 does not go out of bounds
-                    new_grid[i][:] = remove_inner_zeros(new_grid[i][:]) #shift over cells to the left to remove any inner zeros in the beginning
-                    if (new_grid[i][j] == new_grid[i][j+1]): #if this tile is the same number as the tile to its right and it's not zero
-                        new_grid[i][j] = new_grid[i][j] + new_grid[i][j+1] #then add the two tiles together and place the sum one tile to the left
-                        new_grid[i][j+1] = 0 #and set the right tile to zero
+    '''Helper function to shift cells left using 2048-like rules.'''
+    new_grid = np.copy(grid)
+    grid_shape = new_grid.shape
+    for i in range(grid_shape[0]): #indexes by rows
+        for j in range(grid_shape[1]): #indexes by entries in each row
+            if j != grid_shape[1]-1: #ensures that j+1 does not go out of bounds
+                new_grid[i][:] = remove_inner_zeros(new_grid[i][:]) #shift over cells to the left to remove any inner zeros in the beginning
+                if (new_grid[i][j] == new_grid[i][j+1]): #if this tile is the same number as the tile to its right and it's not zero
+                    new_grid[i][j] = new_grid[i][j] + new_grid[i][j+1] #then add the two tiles together and place the sum one tile to the left
+                    new_grid[i][j+1] = 0 #and set the right tile to zero
 
-                    #remove any inner zeros (will shift all tiles to the left if there is a free cell in this row)
-                    new_grid[i][:] = remove_inner_zeros(new_grid[i][:])
-        return new_grid
+                #remove any inner zeros (will shift all tiles to the left if there is a free cell in this row)
+                new_grid[i][:] = remove_inner_zeros(new_grid[i][:])
+    return new_grid
 
 def num_adj_tiles(grid):
     '''Counts the total number of pairs of mergeable adjacent tiles in both the side-to-side and up-and-down directions.
@@ -105,6 +110,74 @@ def num_inst_in_grid(grid, inst):
 def kth_max(grid, k):
     '''Returns the kth largest value in a 2D array.'''
     return np.unique(grid)[-1*k]
+
+def is_max_tile_in_corner(grid, return_type):
+    '''Returns whether a max tile is in the corner of the 2D array or not.'''
+    max_tile = np.amax(grid)
+    if return_type == "boolean":
+        return(grid[0][0] == max_tile or grid[0][-1] == max_tile or grid[-1][0] == max_tile or grid[-1][-1] == max_tile)
+    elif return_type == "list":
+        max_tile_corner_coords = []
+        if grid[0][0] == max_tile:
+            max_tile_corner_coords.append([0, 0])
+        if grid[0][-1] == max_tile:
+            max_tile_corner_coords.append([0, -1])
+        if grid[-1][0] == max_tile:
+            max_tile_corner_coords.append([-1, 0])
+        if grid[-1][-1] == max_tile:
+            max_tile_corner_coords.append([-1, -1])
+        return max_tile_corner_coords
+    else:
+        raise Exception("Input Error: 'return_type' for this function should either be 'boolean' or 'list'.")
+
+def tile_coords_of_number(grid, number):
+    '''Returns the coordinates of all instances of a number in a 2D array.'''
+    numpy_list_num_tile_coords = np.where(grid == number)
+    python_list_num_tile_coords = []
+    for i in range(len(numpy_list_num_tile_coords[0])):
+        row, col = numpy_list_num_tile_coords[0][i], numpy_list_num_tile_coords[1][i]
+        python_list_num_tile_coords.append([row, col])
+    return python_list_num_tile_coords
+
+def is_two_coords_adj(x1, y1, x2, y2):
+    '''Determines if two coordinates are adjacent to one another on a 2D grid.'''
+    dx = abs(x1 - x2)
+    dy = abs(y1 - y2)
+    return (dx + dy == 1)
+
+def num_number_adj_to_tile(grid, number, tile_coords):
+    '''Determines the number of instances where a specified number is adjacent to a specified tile on a 2D grid.'''
+    num_rows, num_cols = grid.shape[0], grid.shape[1]
+    if num_rows * num_cols < 2:
+        raise Exception("Input Error: The input array to this function should be a 2D grid of at least 2 tiles.")
+    row_tile1, col_tile1 = tile_coords[0], tile_coords[1]
+    numpy_list_num_coords = np.where(grid == number)
+    if len(numpy_list_num_coords[0]) == 0:
+        return 0
+    counter = 0
+    for i in range(len(numpy_list_num_coords[0])):
+        row_num, col_num = numpy_list_num_coords[0][i], numpy_list_num_coords[1][i]
+        if is_two_coords_adj(row_num, col_num, row_tile1, col_tile1):
+            counter = counter + 1
+    return counter
+
+def apply_one_param_func_to_list_of_2D_arrays(list_of_2D_arrays, func):
+    list_func_output = []
+    for grid in list_of_2D_arrays:
+        list_func_output.append(func(grid))
+    return np.array(list_func_output)
+
+def apply_two_param_func_to_list_of_2D_arrays(list_of_2D_arrays, second_param, func):
+    list_func_output = []
+    for grid in list_of_2D_arrays:
+        list_func_output.append(func(grid, second_param))
+    return np.array(list_func_output)
+
+def apply_three_param_func_to_list_of_2D_arrays(list_of_2D_arrays, second_param, third_param, func):
+    list_func_output = []
+    for grid in list_of_2D_arrays:
+        list_func_output.append(func(grid, second_param, third_param))
+    return np.array(list_func_output)
 
 class Grid:
     def __init__(self, grid):
