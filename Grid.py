@@ -1,4 +1,5 @@
 from cgi import test
+from turtle import backward
 from unittest import skip
 import numpy as np
 import random
@@ -41,11 +42,52 @@ def shift_cells_left_helper(grid):
                 new_grid[i][:] = remove_inner_zeros(new_grid[i][:])
     return new_grid
 
+def num_adj_tiles_of_number(grid, number):
+    '''Returns the total number of pairs of mergeable adjacent tiles of the specified number.'''
+    # Counts the total number of pairs of mergeable adjacent side-to-side tiles
+    num_side_to_side_adj_tiles = 0
+    grid_shape = grid.shape
+    skip_next_side_to_side_tile = False #initialization
+    for i in range(grid_shape[0]):
+        for j in range(grid_shape[1]):
+            # If find an adjacent side-to-side tile, add 1 to the adjacent side-to-side tile counter
+            #  and skip the next side-to-side tile. Else, don't skip the next side-to-side tile.
+            if j != grid_shape[1] - 1:
+                if (grid[i][j] == grid[i][j+1]) & (grid[i][j] == number) & (not skip_next_side_to_side_tile):
+                    num_side_to_side_adj_tiles = num_side_to_side_adj_tiles + 1
+                    skip_next_side_to_side_tile = True
+                else:
+                    skip_next_side_to_side_tile = False
+            else:
+                skip_next_side_to_side_tile = False
+    
+    # Counts the total number of pairs of mergeable up-and-down adjacent tiles
+    num_up_and_down_adj_tiles = 0
+    transpose_grid = np.transpose(grid)
+    transpose_grid_shape = transpose_grid.shape
+    skip_next_up_and_down_tile = False #initialization
+    for i in range(transpose_grid_shape[0]):
+        for j in range(transpose_grid_shape[1]):
+            # If find an adjacent up-and-down tile, add 1 to the adjacent up-and-down tile counter
+            #  and skip the next up-and-down tile. Else, don't skip the next up-and-down tile.
+            if j != transpose_grid_shape[1] - 1:
+                if (transpose_grid[i][j] == transpose_grid[i][j+1]) & (transpose_grid[i][j] == number) & (not skip_next_up_and_down_tile):
+                    num_up_and_down_adj_tiles = num_up_and_down_adj_tiles + 1
+                    skip_next_up_and_down_tile = True
+                else:
+                    skip_next_up_and_down_tile = False
+            else:
+                skip_next_up_and_down_tile = False
+
+    # Determines whether the number of pairs of mergeable adjacent tiles in greater in the side-to-side
+    #   direction or the up-and-down direction. Returns the total number of pairs of mergeable adjacent 
+    #   tiles in the direction with the most pairs of mergeable adjacent tiles.
+    array_num_adj_tiles_both_dir = np.array([num_side_to_side_adj_tiles, num_up_and_down_adj_tiles])
+    max_num_adj_tiles = max(num_side_to_side_adj_tiles, num_up_and_down_adj_tiles)
+    return max_num_adj_tiles
+
 def num_adj_tiles(grid):
-    '''Counts the total number of pairs of mergeable adjacent tiles in both the side-to-side and up-and-down directions.
-        Calculates whether there are more pairs of mergeable adjacent tiles in the side-to-side or up-and-down direction.
-        Returns both the total number of pairs of mergeable adjacent tiles in the direction with the most pairs of mergeable adjacent tiles 
-            and the direction with the most pairs of mergeable adjacent tiles.'''
+    '''Returns the total number of pairs of mergeable adjacent tiles.'''
     # Counts the total number of pairs of mergeable adjacent side-to-side tiles
     num_side_to_side_adj_tiles = 0
     grid_shape = grid.shape
@@ -82,14 +124,11 @@ def num_adj_tiles(grid):
                 skip_next_up_and_down_tile = False
 
     # Determines whether the number of pairs of mergeable adjacent tiles in greater in the side-to-side
-    #   direction or the up-and-down direction. Returns both the total number of pairs of mergeable adjacent 
-    #   tiles in the direction with the most pairs of mergeable adjacent tiles and the direction 
-    #   with the most pairs of mergeable adjacent tiles. If the total number of pairs of mergeable adjacent
-    #   tiles is the same in both the side-to-side and the up-and-down direction, return both of the directions.
+    #   direction or the up-and-down direction. Returns the total number of pairs of mergeable adjacent 
+    #   tiles in the direction with the most pairs of mergeable adjacent tiles.
     array_num_adj_tiles_both_dir = np.array([num_side_to_side_adj_tiles, num_up_and_down_adj_tiles])
     max_num_adj_tiles = max(num_side_to_side_adj_tiles, num_up_and_down_adj_tiles)
-    dir_of_max_num_adj_tiles = np.where(array_num_adj_tiles_both_dir == max_num_adj_tiles)[0]
-    return max_num_adj_tiles, dir_of_max_num_adj_tiles
+    return max_num_adj_tiles
 
 def free_cells(grid):
     """Returns a list of empty cells."""
@@ -130,36 +169,93 @@ def is_max_tile_in_corner(grid, return_type):
     else:
         raise Exception("Input Error: 'return_type' for this function should either be 'boolean' or 'list'.")
 
-def tile_coords_of_number(grid, number):
-    '''Returns the coordinates of all instances of a number in a 2D array.'''
+def tile_coords_of_number_along_edge(grid, number):
+    '''Returns the coordinates of all instances of a number along the edge in a 2D array.'''
     numpy_list_num_tile_coords = np.where(grid == number)
     python_list_num_tile_coords = []
+    num_rows, num_cols = grid.shape[0], grid.shape[1]
     for i in range(len(numpy_list_num_tile_coords[0])):
         row, col = numpy_list_num_tile_coords[0][i], numpy_list_num_tile_coords[1][i]
-        python_list_num_tile_coords.append([row, col])
+        if (row == 0 or row == num_rows-1) or (col == 0 or col == num_cols-1):
+            python_list_num_tile_coords.append([row, col])
     return python_list_num_tile_coords
 
-def is_two_coords_adj(x1, y1, x2, y2):
-    '''Determines if two coordinates are adjacent to one another on a 2D grid.'''
-    dx = abs(x1 - x2)
-    dy = abs(y1 - y2)
-    return (dx + dy == 1)
+def is_two_coords_adj(y1, x1, y2, x2, direction):
+    '''Determines if two coordinates are adjacent to one another on a 2D grid in the specified direction.'''
+    if direction == "horizontal":
+        return abs(x1 - x2) == 1
+    elif direction == "vertical":
+        return abs(y1- y2) == 1
+    else:
+        raise Exception("Input Error: this function can only take in 'horizontal' or 'vertical' for direction.")
 
 def num_number_adj_to_tile(grid, number, tile_coords):
-    '''Determines the number of instances where a specified number is adjacent to a specified tile on a 2D grid.'''
+    '''Determines the number of instances where a specified number is adjacent to a specified tile on a 2D grid.
+        For the purposes of the AI, this function can only accept tile_coords along the edge of the board, and will
+        only consider numbers along the edge of the board as truly adjacent. It will search along the horizontal
+        and the vertical direction and output the total number of adjacent tiles in both directions.'''
     num_rows, num_cols = grid.shape[0], grid.shape[1]
     if num_rows * num_cols < 2:
         raise Exception("Input Error: The input array to this function should be a 2D grid of at least 2 tiles.")
-    row_tile1, col_tile1 = tile_coords[0], tile_coords[1]
-    numpy_list_num_coords = np.where(grid == number)
-    if len(numpy_list_num_coords[0]) == 0:
-        return 0
-    counter = 0
-    for i in range(len(numpy_list_num_coords[0])):
-        row_num, col_num = numpy_list_num_coords[0][i], numpy_list_num_coords[1][i]
-        if is_two_coords_adj(row_num, col_num, row_tile1, col_tile1):
-            counter = counter + 1
-    return counter
+    row_tile, col_tile = tile_coords[0], tile_coords[1]
+    if (row_tile == 0 or row_tile == num_rows-1) or (col_tile == 0 or col_tile == num_cols-1):
+        numpy_list_num_coords = np.where(grid == number)
+        if len(numpy_list_num_coords[0]) == 0:
+            return 0
+        horizontal_counter = 0
+        vertical_counter = 0
+        for i in range(len(numpy_list_num_coords[0])):
+            row_num, col_num = numpy_list_num_coords[0][i], numpy_list_num_coords[1][i]
+            if (row_num == 0 or row_num == num_rows-1) or (col_num == 0 or col_num == num_cols-1):
+                if is_two_coords_adj(row_num, col_num, row_tile, col_tile, "horizontal"):
+                    horizontal_counter = horizontal_counter + 1
+                if is_two_coords_adj(row_num, col_num, row_tile, col_tile, "vertical"):
+                    vertical_counter = vertical_counter + 1
+        return horizontal_counter + vertical_counter
+    else:
+        raise Exception("Input Error: This function can only accept tile_coords that are along the edges of the grid.")
+
+def num_edges_from_a_corner_max_tile_in_sorted_order(grid, corner_coord):
+    '''Determines the number of sorted edges emanating from a corner max tile. If the inputted coordinates
+        are not in a corner or the inputted coords are not pointing to a max tile, return 0.
+        Can take in both one corner coord or a list of corner coords.'''
+    num_rows, num_cols = grid.shape[0], grid.shape[1]
+    max_num = np.amax(grid)
+    transposed_grid = np.transpose(grid)
+    sorted_edges = 0
+    if np.array(corner_coord).ndim == 1:
+        if len(corner_coord) == 0:
+            return 0
+        row_corner_tile, col_corner_tile = corner_coord[0], corner_coord[1]
+        if (row_corner_tile == 0 or row_corner_tile == num_rows-1) and (col_corner_tile == 0 or col_corner_tile == num_cols-1) and (grid[row_corner_tile, col_corner_tile] == max_num):
+            forward_horizontal_sort = np.sort(grid[row_corner_tile])
+            backward_horizontal_sort = -np.sort(-grid[row_corner_tile])
+            if np.array_equal(grid[row_corner_tile], forward_horizontal_sort) or np.array_equal(grid[row_corner_tile], backward_horizontal_sort):
+                sorted_edges = sorted_edges + 1
+            
+            forward_vertical_sort = np.sort(transposed_grid[col_corner_tile])
+            backward_vertical_sort = -np.sort(-transposed_grid[col_corner_tile])
+            if np.array_equal(transposed_grid[col_corner_tile], forward_vertical_sort) or np.array_equal(transposed_grid[col_corner_tile], backward_horizontal_sort):
+                sorted_edges = sorted_edges + 1
+            return sorted_edges
+        else:
+            return 0
+    elif np.array(corner_coord).ndim == 2:
+        for one_corner_coord in corner_coord:
+            if len(one_corner_coord) == 0:
+                return 0
+            row_corner_tile, col_corner_tile = one_corner_coord[0], one_corner_coord[1]
+            if (row_corner_tile == 0 or row_corner_tile == num_rows-1) and (col_corner_tile == 0 or col_corner_tile == num_cols-1) and (grid[row_corner_tile, col_corner_tile] == max_num):
+                forward_horizontal_sort = np.sort(grid[row_corner_tile])
+                backward_horizontal_sort = -np.sort(-grid[row_corner_tile])
+                if np.array_equal(grid[row_corner_tile], forward_horizontal_sort) or np.array_equal(grid[row_corner_tile], backward_horizontal_sort):
+                    sorted_edges = sorted_edges + 1
+                
+                forward_vertical_sort = np.sort(transposed_grid[col_corner_tile])
+                backward_vertical_sort = -np.sort(-transposed_grid[col_corner_tile])
+                if np.array_equal(transposed_grid[col_corner_tile], forward_vertical_sort) or np.array_equal(transposed_grid[col_corner_tile], backward_horizontal_sort):
+                    sorted_edges = sorted_edges + 1
+        return sorted_edges    
 
 def apply_one_param_func_to_list_of_2D_arrays(list_of_2D_arrays, func):
     list_func_output = []
@@ -178,6 +274,64 @@ def apply_three_param_func_to_list_of_2D_arrays(list_of_2D_arrays, second_param,
     for grid in list_of_2D_arrays:
         list_func_output.append(func(grid, second_param, third_param))
     return np.array(list_func_output)
+
+def assign_score(grid):
+    MAX_TILE_IN_CORNER_WEIGHT = 1
+    MAX_TILE_WEIGHT = 0.075
+    TILE_WEIGHTS = {
+        0: 0,
+        2: 0,
+        4: 1,
+        8: 3,
+        16: 9,
+        32: 27,
+        64: 81,
+        128: 243,
+        256: 729,
+        512: 2187,
+        1024: 6561,
+        2048: 19683,
+        4096: 59049,
+        8192: 177147,
+        16384: 531441,
+        32768: 1594323,
+        65536: 4782969,
+        131072: 14348907
+    }
+    NUM_ADJACENTS_WEIGHT = 0.05
+    NUM_SORTED_EDGES_WEIGHT = 0.025
+    NUM_FREE_CELLS_WEIGHT = 0.01
+    score = 0
+
+    # Multiply the number of max tiles in the corners of the grid by MAX_TILE_IN_CORNER_WEIGHT, 
+    #   then add the product to the score.
+    corner_max_tile_coords = is_max_tile_in_corner(grid, "list")
+    score = score + len(corner_max_tile_coords) * MAX_TILE_IN_CORNER_WEIGHT
+
+    # Multiply the number of tiles of a certain number by its respective tile weight scaled by MAX_TILE_WEIGHT (exception: 4 and 2 tiles), then add the product to the score.
+    uniques = np.unique(grid)
+    for unique in uniques:
+        if unique != 0 and unique != 2 and unique != 4:
+            score = score + num_inst_in_grid(grid, unique)*TILE_WEIGHTS[unique]*MAX_TILE_WEIGHT
+    
+    # Multiply the number of adjacent tiles of each number in the grid by its respective tile weight
+    #   scaled by NUM_ADJACENTS_WEIGHT, then add the product to the score.
+    uniques = np.unique(grid)
+    for unique in uniques:
+        score = score + num_adj_tiles_of_number(grid, unique)*TILE_WEIGHTS[unique]*NUM_ADJACENTS_WEIGHT
+
+    # Multiply the number of sorted edges by NUM_SORTED_EDGES_WEIGHT, then add the product to the score.
+    max_num = np.amax(grid)
+    coords_of_max_num = tile_coords_of_number_along_edge(grid, max_num)
+    num_sorted_edges = 0
+    for i in range(len(coords_of_max_num)):
+        num_sorted_edges = num_sorted_edges + num_edges_from_a_corner_max_tile_in_sorted_order(grid, coords_of_max_num[i])
+    score = score + num_sorted_edges*NUM_SORTED_EDGES_WEIGHT
+
+    # Multiply the number of free cells by NUM_FREE_CELLS_WEIGHT, then add the product to the score.
+    score = score + num_free_cells(grid)*NUM_FREE_CELLS_WEIGHT
+
+    return score
 
 class Grid:
     def __init__(self, grid):

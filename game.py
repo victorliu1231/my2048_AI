@@ -1,5 +1,5 @@
 from turtle import st
-from Grid import Grid, is_equal_arrays, score
+from Grid import Grid, is_equal_arrays, score, assign_score
 import numpy as np
 import pygame
 import sys
@@ -124,18 +124,63 @@ while True:
                         sys.exit()
 
                 if AI_self_run:
-                        best_direction = AI.predict_best_direction(GameGrid)
-                        print(best_direction)
-                        AI.execute_move(best_direction, GameGrid)
+                        scores = np.array([])
+                        scores = np.append(scores, assign_score(GameGrid.shift_cells_left(change_grid_state=False)))
+                        scores = np.append(scores, assign_score(GameGrid.shift_cells_right(change_grid_state=False)))
+                        scores = np.append(scores, assign_score(GameGrid.shift_cells_up(change_grid_state=False)))
+                        scores = np.append(scores, assign_score(GameGrid.shift_cells_down(change_grid_state=False)))
+                        highest_score_directions = np.where(scores == np.max(scores))[0]
+                        if len(highest_score_directions) > 1:
+                                highest_score_direction = random.sample(list(highest_score_directions), 1)[0]
+                        else:
+                                highest_score_direction = highest_score_directions[0]
+                        print(scores[highest_score_direction])
+                        AI.execute_move(highest_score_direction, GameGrid)
                         GameGrid.spawn_new()
                         update_screen(GameGrid.grid)
-                elif AI_upon_click:
-                        if event.type == pygame.MOUSEBUTTONUP:
+                        '''triangulation_moves = AI.check_triangulate(GameGrid)
+                        if len(triangulation_moves) == 3:
+                                print("triangulated")
+                                for direction in triangulation_moves:
+                                        print(direction)
+                                        AI.execute_move(direction, GameGrid)
+                                        GameGrid.spawn_new()
+                                        update_screen(GameGrid.grid)
+                        else:
                                 best_direction = AI.predict_best_direction(GameGrid)
                                 print(best_direction)
                                 AI.execute_move(best_direction, GameGrid)
                                 GameGrid.spawn_new()
+                                update_screen(GameGrid.grid)'''
+                elif AI_upon_click:
+                        if event.type == pygame.MOUSEBUTTONUP:
+                                scores = np.array([])
+                                scores = np.append(scores, assign_score(GameGrid.shift_cells_left(change_grid_state=False)))
+                                scores = np.append(scores, assign_score(GameGrid.shift_cells_right(change_grid_state=False)))
+                                scores = np.append(scores, assign_score(GameGrid.shift_cells_up(change_grid_state=False)))
+                                scores = np.append(scores, assign_score(GameGrid.shift_cells_down(change_grid_state=False)))
+                                highest_score_directions = np.where(scores == np.max(scores))[0]
+                                if len(highest_score_directions) > 1:
+                                        highest_score_direction = random.sample(list(highest_score_directions), 1)[0]
+                                else:
+                                        highest_score_direction = highest_score_directions[0]
+                                print(scores[highest_score_direction])
+                                AI.execute_move(highest_score_direction, GameGrid)
+                                GameGrid.spawn_new()
                                 update_screen(GameGrid.grid)
+                                '''triangulation_moves = AI.check_triangulate(GameGrid)
+                                if len(triangulation_moves) == 3:
+                                        for direction in triangulation_moves:
+                                                print(direction)
+                                                AI.execute_move(direction, GameGrid)
+                                                GameGrid.spawn_new()
+                                                update_screen(GameGrid.grid)
+                                else:
+                                        best_direction = AI.predict_best_direction(GameGrid)
+                                        print(best_direction)
+                                        AI.execute_move(best_direction, GameGrid)
+                                        GameGrid.spawn_new()
+                                        update_screen(GameGrid.grid)'''
                 else:
                         # checking if keydown event happened or not
                         if event.type == pygame.KEYDOWN:
