@@ -9,8 +9,7 @@ def score(grid):
     return np.sum(grid)
 
 def is_equal_arrays(array1, array2):
-    '''Determines whether array1 and array2 are equal element-wise. 
-        Can take either a 2D array or a list of 2D arrays for array1.'''
+    '''Determines whether array1 and array2 are equal element-wise.'''
     return (array1 == array2).all()
 
 def is_all_arrays_equal(list_of_arrs):
