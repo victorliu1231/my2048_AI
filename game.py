@@ -1,5 +1,5 @@
 from turtle import st
-from Grid import Grid, is_equal_arrays, score, assign_score, apply_two_param_func_to_list_of_2D_arrays
+from Grid import Grid, is_equal_arrays, score, assign_score, apply_two_param_func_to_list_of_2D_arrays, apply_one_param_func_to_list_of_2D_arrays
 import numpy as np
 import pygame
 import sys
@@ -93,6 +93,12 @@ def is_any_more_moves(Grid_object):
                 if not is_equal_arrays(Grid_object.grid, predicted_grids[key]):
                         is_at_least_one_move = True
         return is_at_least_one_move
+
+#def search(step, grid):
+#        if step == 2:
+#                return fitness(grid)
+#        else:
+#                return search(step+1, grid)
 
 update_screen(starting_grid)
 
@@ -191,7 +197,9 @@ while True:
                                         scores = np.append(scores, assign_score(grids[i]))
                                 # If the new grid is the same as the old grid, then remove the predicted grid from the selection pool.
                                 filtered_scores = scores[~apply_two_param_func_to_list_of_2D_arrays(grids, GameGrid.grid, is_equal_arrays)]
-                                highest_score_directions = np.where(scores == np.max(filtered_scores))[0]
+                                highest_score_direction = np.where(scores == np.max(filtered_scores))[0]
+                                print(highest_score_direction)
+                                '''highest_score_directions = np.where(scores == np.max(filtered_scores))[0]
                                 original_highest_score_directions = np.copy(highest_score_directions)
                                 # Favors directions that will keep the max tile to the corner.
                                 if GameGrid.grid[0][0] == max_num: 
@@ -208,10 +216,11 @@ while True:
                                         highest_score_directions = highest_score_directions[highest_score_directions != 2]
                                 if len(highest_score_directions) == 0:
                                         highest_score_directions = original_highest_score_directions
-                                if len(highest_score_directions) > 1:
-                                        highest_score_direction = random.sample(list(highest_score_directions), 1)[0]
+                                '''
+                                if len(highest_score_direction) > 1:
+                                        highest_score_direction = random.sample(list(highest_score_direction), 1)[0]
                                 else:
-                                        highest_score_direction = highest_score_directions[0]
+                                        highest_score_direction = highest_score_direction[0]
                                 print(scores[highest_score_direction])
                                 print(highest_score_direction)
                                 AI.execute_move(highest_score_direction, GameGrid)

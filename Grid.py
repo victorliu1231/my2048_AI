@@ -3,6 +3,7 @@ from turtle import backward
 from unittest import skip
 import numpy as np
 import random
+import math
 
 def score(grid):
     '''Returns the total score in a grid.'''
@@ -256,6 +257,22 @@ def num_edges_from_a_corner_max_tile_in_sorted_order(grid, corner_coord):
                     sorted_edges = sorted_edges + 1
         return sorted_edges    
 
+def fitness(grid):
+        '''Fitness function that evaluates how good a given grid is.
+           The fitness of a grid is determined by the sum of all its tiles minus
+           a penalty score, which is calculated by summing all the differences between adjacent
+           tiles (i.e. the difference between a tile's value and the value of the tiles to the right and
+           below it). 
+           '''
+        sum = np.sum(grid)
+        penalty = 0
+        for i in range(len(grid)):
+                if i != len(grid) - 1:
+                        for j in range(len(grid[i])):
+                                if j != len(grid[i]) - 1:
+                                        penalty = penalty + np.abs(grid[i][j] - grid[i][j + 1]) + np.abs(grid[i][j] - grid[i + 1][j])
+        return sum * 4 - penalty
+
 def apply_one_param_func_to_list_of_2D_arrays(list_of_2D_arrays, func):
     list_func_output = []
     for grid in list_of_2D_arrays:
@@ -276,6 +293,7 @@ def apply_three_param_func_to_list_of_2D_arrays(list_of_2D_arrays, second_param,
 
 def assign_score(grid):
     MAX_TILE_IN_CORNER_WEIGHT = 2
+    FITNESS_WEIGHT = 0.3
     MAX_TILE_WEIGHT = 0.075
     TILE_WEIGHTS = {
         0: 0,
@@ -324,23 +342,39 @@ def assign_score(grid):
                 if num_edges_from_a_corner_max_tile_in_sorted_order(grid, tile_coord) != 2 and grid[-1][-2] != 0 and grid[-2][-1] != 0:
                     NUM_ADJACENTS_WEIGHT = 0.5
 
-
     # Multiply the number of max tiles in the corners of the grid by MAX_TILE_IN_CORNER_WEIGHT, 
     #   then add the product to the score.
     corner_max_tile_coords = is_max_tile_in_corner(grid, "list")
     score = score + len(corner_max_tile_coords) * MAX_TILE_IN_CORNER_WEIGHT
+    print(f"max_tile_in_corner_contribution: {len(corner_max_tile_coords) * MAX_TILE_IN_CORNER_WEIGHT}")
+
+    # Normalize the fitness score so that it's sometimes below that of max_tiles_in_corner contribution.
+    #   Then multiply the normalized fitness score by FITNESS_WEIGHT and add the product to the score.
+    fitness_of_grid = fitness(grid)
+    #if fitness_of_grid <= 0:
+    #    fitness_of_grid = 0.1 # Avoids log10 domain error
+    #order_of_magnitude = math.floor(math.log(fitness_of_grid, 5))
+    #normalized_fitness_score = fitness_of_grid / (5 ** order_of_magnitude)
+    score = score + fitness_of_grid * FITNESS_WEIGHT
+    print(f"fitness_contribution: {fitness_of_grid * FITNESS_WEIGHT}")
 
     # Multiply the number of tiles of a certain number by its respective tile weight scaled by MAX_TILE_WEIGHT (exception: 4 and 2 tiles), then add the product to the score.
     uniques = np.unique(grid)
+    max_tile_weight_contribution = 0
     for unique in uniques:
         if unique != 0 and unique != 2 and unique != 4:
-            score = score + num_inst_in_grid(grid, unique)*TILE_WEIGHTS[unique]*MAX_TILE_WEIGHT
+            max_tile_weight_contribution = max_tile_weight_contribution + num_inst_in_grid(grid, unique)*TILE_WEIGHTS[unique]*MAX_TILE_WEIGHT
+    score = score + max_tile_weight_contribution
+    print(f"max_tile_weight_contribution: {max_tile_weight_contribution}")
     
     # Multiply the number of adjacent tiles of each number in the grid by its respective tile weight
     #   scaled by NUM_ADJACENTS_WEIGHT, then add the product to the score.
+    num_adjs_contribution = 0
     uniques = np.unique(grid)
     for unique in uniques:
-        score = score + num_adj_tiles_of_number(grid, unique)*TILE_WEIGHTS[unique]*NUM_ADJACENTS_WEIGHT
+        num_adjs_contribution = num_adjs_contribution + num_adj_tiles_of_number(grid, unique)*TILE_WEIGHTS[unique]*NUM_ADJACENTS_WEIGHT
+    score = score + num_adjs_contribution
+    print(f"num_adjs_contribution: {num_adjs_contribution}")
 
     # Multiply the number of sorted edges by NUM_SORTED_EDGES_WEIGHT, then add the product to the score.
     coords_of_max_num = tile_coords_of_number_along_edge(grid, max_num)
@@ -348,10 +382,12 @@ def assign_score(grid):
     for i in range(len(coords_of_max_num)):
         num_sorted_edges = num_sorted_edges + num_edges_from_a_corner_max_tile_in_sorted_order(grid, coords_of_max_num[i])
     score = score + num_sorted_edges*NUM_SORTED_EDGES_WEIGHT
+    print(f"num_sorted_edges_contribution: {num_sorted_edges*NUM_SORTED_EDGES_WEIGHT}")
 
     # Multiply the number of free cells by NUM_FREE_CELLS_WEIGHT, then add the product to the score.
     score = score + num_free_cells(grid)*NUM_FREE_CELLS_WEIGHT
-
+    print(f"num_free_cells_contribution: {num_free_cells(grid)*NUM_FREE_CELLS_WEIGHT}")
+    print("\n")
     return score
 
 class Grid:
