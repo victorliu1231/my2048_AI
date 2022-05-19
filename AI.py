@@ -268,13 +268,13 @@ class AI:
     def execute_move(self, direction, Grid_object):
         """Shift cells in the given direction"""
         if direction == "left" or direction == 0:
-            Grid_object.shift_cells_left()
+            print(Grid_object.shift_cells_left())
         elif direction == "right" or direction == 1:
-            Grid_object.shift_cells_right()
+            print(Grid_object.shift_cells_right())
         elif direction == "up" or direction == 2:
-            Grid_object.shift_cells_up()
+            print(Grid_object.shift_cells_up())
         elif direction == "down" or direction == 3:
-            Grid_object.shift_cells_down()
+            print(Grid_object.shift_cells_down())
         else:
             raise Exception("Keyword Error: direction must either be 'left', 'right', 'up', 'down', 0, 1, 2, or 3.")
 

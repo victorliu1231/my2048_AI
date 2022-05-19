@@ -275,7 +275,7 @@ def apply_three_param_func_to_list_of_2D_arrays(list_of_2D_arrays, second_param,
     return np.array(list_func_output)
 
 def assign_score(grid):
-    MAX_TILE_IN_CORNER_WEIGHT = 1
+    MAX_TILE_IN_CORNER_WEIGHT = 2
     MAX_TILE_WEIGHT = 0.075
     TILE_WEIGHTS = {
         0: 0,
@@ -298,9 +298,32 @@ def assign_score(grid):
         131072: 14348907
     }
     NUM_ADJACENTS_WEIGHT = 0.05
-    NUM_SORTED_EDGES_WEIGHT = 0.025
+    NUM_SORTED_EDGES_WEIGHT = 0.05
     NUM_FREE_CELLS_WEIGHT = 0.01
     score = 0
+
+    # If the max tile is >= 128 and the max tile is in the corner and there is an unsorted edge
+    #   where the number next to the corner max tile is not just 0 (i.e. it can be 2, 4, 8, etc
+    #   as long as its unsorted), then change the NUM_ADJACENTS_WEIGHT to 0.5. The reason for this
+    #   is to get any "stuck" tiles solved.
+    max_num = np.amax(grid)
+    num_rows, num_cols = grid.shape[0], grid.shape[1]
+    if max_num >= 128:
+        tile_coords_max_num = tile_coords_of_number_along_edge(grid, max_num)
+        for tile_coord in tile_coords_max_num:
+            if tile_coord == [0, 0]:
+                if num_edges_from_a_corner_max_tile_in_sorted_order(grid, tile_coord) != 2 and grid[0][1] != 0 and grid[1][0] != 0:
+                    NUM_ADJACENTS_WEIGHT = 0.5
+            elif tile_coord == [0, num_cols-1]:
+                if num_edges_from_a_corner_max_tile_in_sorted_order(grid, tile_coord) != 2 and grid[0][-2] != 0 and grid[1][-1] != 0:
+                    NUM_ADJACENTS_WEIGHT = 0.5
+            elif tile_coord == [num_rows-1, 0]:
+                if num_edges_from_a_corner_max_tile_in_sorted_order(grid, tile_coord) != 2 and grid[-1][1] != 0 and grid[-2][0] != 0:
+                    NUM_ADJACENTS_WEIGHT = 0.5
+            elif tile_coord == [num_rows-1, num_cols-1]:
+                if num_edges_from_a_corner_max_tile_in_sorted_order(grid, tile_coord) != 2 and grid[-1][-2] != 0 and grid[-2][-1] != 0:
+                    NUM_ADJACENTS_WEIGHT = 0.5
+
 
     # Multiply the number of max tiles in the corners of the grid by MAX_TILE_IN_CORNER_WEIGHT, 
     #   then add the product to the score.
@@ -320,7 +343,6 @@ def assign_score(grid):
         score = score + num_adj_tiles_of_number(grid, unique)*TILE_WEIGHTS[unique]*NUM_ADJACENTS_WEIGHT
 
     # Multiply the number of sorted edges by NUM_SORTED_EDGES_WEIGHT, then add the product to the score.
-    max_num = np.amax(grid)
     coords_of_max_num = tile_coords_of_number_along_edge(grid, max_num)
     num_sorted_edges = 0
     for i in range(len(coords_of_max_num)):

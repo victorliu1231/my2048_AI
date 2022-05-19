@@ -190,8 +190,8 @@ while True:
                                 for i in range(4):
                                         scores = np.append(scores, assign_score(grids[i]))
                                 # If the new grid is the same as the old grid, then remove the predicted grid from the selection pool.
-                                scores = scores[~apply_two_param_func_to_list_of_2D_arrays(grids, GameGrid.grid, is_equal_arrays)]
-                                highest_score_directions = np.where(scores == np.max(scores))[0]
+                                filtered_scores = scores[~apply_two_param_func_to_list_of_2D_arrays(grids, GameGrid.grid, is_equal_arrays)]
+                                highest_score_directions = np.where(scores == np.max(filtered_scores))[0]
                                 original_highest_score_directions = np.copy(highest_score_directions)
                                 # Favors directions that will keep the max tile to the corner.
                                 if GameGrid.grid[0][0] == max_num: 
