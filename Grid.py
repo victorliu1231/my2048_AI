@@ -292,7 +292,7 @@ def apply_three_param_func_to_list_of_2D_arrays(list_of_2D_arrays, second_param,
     return np.array(list_func_output)
 
 def assign_score(grid):
-    MAX_TILE_IN_CORNER_WEIGHT = 2
+    MAX_TILE_IN_CORNER_WEIGHT = 1
     FITNESS_WEIGHT = 0.3
     MAX_TILE_WEIGHT = 0.075
     TILE_WEIGHTS = {
@@ -316,7 +316,7 @@ def assign_score(grid):
         131072: 14348907
     }
     NUM_ADJACENTS_WEIGHT = 0.05
-    NUM_SORTED_EDGES_WEIGHT = 0.05
+    NUM_SORTED_EDGES_WEIGHT = 0.025
     NUM_FREE_CELLS_WEIGHT = 0.01
     score = 0
 

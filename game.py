@@ -16,12 +16,12 @@ grid_height = 4 #number of rows in the grid
 if (grid_width*grid_height < 2):
         raise Exception("Your grid must have more than 1 tile in it.")
 
-starting_grid = np.zeros((grid_width,grid_height))
+starting_grid = np.zeros((grid_height,grid_width))
 counter = 0
 
 while counter < 2:
-        randrow = random.randint(0, grid_width-1)
-        randcol = random.randint(0, grid_height-1)
+        randrow = random.randint(0, grid_height-1)
+        randcol = random.randint(0, grid_width-1)
         if starting_grid[randrow][randcol] != 2:
                 starting_grid[randrow][randcol] = 2
                 counter = counter + 1
